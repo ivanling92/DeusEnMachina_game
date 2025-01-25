@@ -1,4 +1,4 @@
-/* Nuclear Bubble V1
+/* Deus En Machina V1
 * Author: Ivan Ling
 * 
 *
@@ -27,8 +27,8 @@ const ctx = canvas.getContext("2d");
 
 
 //Variables
-const windSpawnrate = 8; // Wind spawn rate
-const maxWinspawn = 20;
+const windSpawnrate = 15; // Wind spawn rate
+const maxWinspawn = 100;
 const minWinspawn = 2;
 const windStrength = 0.005; // Wind strength
 const dampingFactor = 0.98; // Damping factor
@@ -37,11 +37,16 @@ const frictionFactor = 0.999; // Friction factor
 
 const speedDisplay = document.getElementById("aveSpeed");
 
+//Get the ul element called varticles
+const varticles = document.getElementById("varticles");
+
+
 
 //Symbol
 function getSymbol(value){
     //lookup table for symbols
     const symbols = {
+        1:"⬲",
         2: "✤",
         4: "✼",
         8: "✽",
@@ -49,11 +54,11 @@ function getSymbol(value){
         32: "✿",
         64: "❀",
         128: "❁",
-        154: "❇",
-        185: "🌸",
-        222: "🌺",
-        266: "🌼",
-        319: "🌻",
+        154: "❂",
+        185: "❈",
+        222: "✳",
+        266: "✷",
+        319: "✵",
     };
     return symbols[value] || "🌱";
 }
@@ -61,6 +66,7 @@ function getSymbol(value){
 
 function getColor(value) {
     const colors = {
+      1: "rgb(66, 72, 67)",
       2: "#3B6790",  
       4: "#9F8383",  
       8: "rgb(46, 109, 118)",   
@@ -72,7 +78,7 @@ function getColor(value) {
       185: "rgb(34, 139, 34)", 
       222: "rgb(241, 244, 60)", 
       266: "rgb(27, 246, 227))", 
-      319: "rgb(255, 0, 255)",
+      318: "rgb(255, 0, 255)",
     };
     return colors[value] || "rgb(230, 150, 30)"; // Default to Earth Black
 }
@@ -104,6 +110,12 @@ class Bubble {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     let symbol = getSymbol(this.value);
+    //If symbol not in varticle list add it
+    if(!varticles.innerHTML.includes(symbol)){
+        varticles.innerHTML += `<li>${symbol}</li>`;
+    }
+
+
     ctx.fillText(symbol, this.x, this.y);
   }
 
@@ -120,15 +132,24 @@ class Bubble {
     if (Math.abs(this.dx) < 0.2) this.dx = 0;
     if (Math.abs(this.dy) < 0.2) this.dy = 0;
 
+    //ODDLES LOGIC
+
+    if (this.value == 1){
+        this.dx -= 0.5;
+    }
+
+
 
     //If after mouse up the average speed of all bubble is near 0, trigger game over text
     let totalSpeed = 0;
     bubbles.forEach((bubble) => {
-        totalSpeed += Math.abs(bubble.dx) + Math.abs(bubble.dy);
+            if(bubble.value%2 == 0){
+            totalSpeed += Math.abs(bubble.dx) + Math.abs(bubble.dy);
+            }   
         }
     );
     speedDisplay.textContent = "Entropy:" + (totalSpeed/bubbles.length).toFixed(2);
-    if (totalSpeed < 0.1) {
+    if (totalSpeed < 0.2) {
         gameOver();
         }
 
@@ -169,7 +190,11 @@ class Bubble {
 
       if (distance < minDistance) {
         // If values match, merge bubbles
-        if (this.value === other.value) {
+        if(this.value == 1){
+            //we'll think of something.
+        }
+
+        if (this.value === other.value && this.value%2 == 0) {
             if(this.value > 100){
                 this.value = Math.round(1.2*this.value);
                 this.radius = 20+(this.value*0.2); // Scale radius
@@ -283,6 +308,39 @@ function createBubbles(numBubbles) {
   return bubbles;
 }
 
+
+// Generate random bubbles
+function createOddles(numBubbles) {
+    const values = [1];
+    const bubbles = [];
+    for (let i = 0; i < numBubbles; i++) {
+      const value = values[Math.floor(Math.random() * values.length)];
+      const radius = 20+(value*0.5); // Scale radius
+      //Only create bubbles in blank spaces
+      let x = Math.random() * (canvas.width - radius * 2) + radius;
+      let y = Math.random() * (canvas.height - radius * 2) + radius;
+      let isTouching = false;
+      bubbles.forEach((bubble) => {
+          const dx = x - bubble.x;
+          const dy = y - bubble.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < bubble.radius) {
+              isTouching = true;
+          }
+      });
+      if(isTouching){
+          i--;
+          continue;
+      }
+      
+      const dx = wind.x + (Math.random() - 0.5) * 2; // Random horizontal velocity
+      const dy = wind.y +(Math.random() - 0.5) * 2; // Random vertical velocity
+      bubbles.push(new Bubble(x, y, radius, dx, dy, value));
+    }
+    return bubbles;
+  }
+
+
 // Wind state
 let wind = { x: 0, y: 0 };
 let windDecay = 0.8; // Decay rate of the wind
@@ -297,7 +355,7 @@ canvas.addEventListener("mousedown", (e) => {
     dendX = e.clientX;
     dendY = e.clientY;
 
-    //only works if not touching a bubble
+    // Only works if not clicking on a bubble
     let isTouching = false;
     bubbles.forEach((bubble) => {
         const dx = e.clientX - bubble.x;
@@ -307,51 +365,53 @@ canvas.addEventListener("mousedown", (e) => {
             isTouching = true;
         }
     });
-    
-    if(!isTouching)
-    {
+
+    if (!isTouching) {
         isDragging = true;
         startX = e.clientX;
         startY = e.clientY;
     }
 });
 
-
-//Draw a line showing the vector when dragging
 canvas.addEventListener("mousemove", (e) => {
     if (isDragging) {
-        dendX = e.clientX;  // Update endX and endY
+        dendX = e.clientX; // Update endX and endY
         dendY = e.clientY;
     }
-
 });
 
 canvas.addEventListener("mouseup", (e) => {
     isDragging = false;
-
     let endX = e.clientX;
     let endY = e.clientY;
+
     wind.x = (endX - startX) * windStrength; // Scale wind strength
     wind.y = (endY - startY) * windStrength;
 
-    //Calculate the total bubbles to be added proportional to the wind strength
-    let totalBubbles = Math.round(Math.abs(wind.x)+Math.abs(wind.y)*windSpawnrate);
-    //If the wind is too low, add 2 bubbles
-    if(totalBubbles < minWinspawn){
+    // Calculate the total bubbles to be added proportional to the wind strength
+    let totalBubbles = Math.round(Math.abs(wind.x) + Math.abs(wind.y) * windSpawnrate);
+
+    // If the wind is too low, add 2 bubbles
+    if (totalBubbles < minWinspawn) {
         totalBubbles = minWinspawn;
-    }
-    else if(totalBubbles > maxWinspawn){
+    } else if (totalBubbles > maxWinspawn) {
         totalBubbles = maxWinspawn;
     }
     console.log(totalBubbles);
 
-    if(!isGameOver){
+    if (!isGameOver) {
         // Add random bubbles when applying wind
-        const newBubbles = createBubbles(totalBubbles); // Add 5 small bubbles
+        const newBubbles = createBubbles(totalBubbles);
+
+        // Check if ❁ is in the varticles list, if it is, add oddles
+        if (varticles.innerHTML.includes("❁")) {
+            const oddles = createOddles(2);
+            bubbles.push(...oddles);
+        }
         bubbles.push(...newBubbles);
     }
-  
 });
+
 
 //Handle touch events
 canvas.addEventListener("touchstart", (e) => {
@@ -405,6 +465,12 @@ canvas.addEventListener("touchend", (e) => {
     if(!isGameOver){
         // Add random bubbles when applying wind
         const newBubbles = createBubbles(totalBubbles); // Add 5 small bubbles
+
+        //Check if ❁ is in the varticles list if it is, add oddles
+        if(varticles.innerHTML.includes("❁")){
+            const oddles = createOddles(2);
+            bubbles.push(...oddles);
+        }
         bubbles.push(...newBubbles);
     }
 
@@ -464,7 +530,33 @@ function animate() {
 
         ctx.moveTo(wstartX, wstartY);
         ctx.lineTo(wdendX, wdendY);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+
+        let A = wstartX - wdendX;
+        let B = wstartY - wdendY;
+
+        //calculate absolute magnitude of wind
+        let windMag = Math.sqrt(A*A + B*B);
+        console.log("wind mag:" + windMag);
+        
+        //scale windMag to 255
+        windMag = Math.round((windMag/800)*255);
+
+
+        //Make line thickness dependent on wind strength
+        ctx.lineWidth = Math.abs(windMag)*0.05;
+        
+        //Make line color dependent on wind strength, blue for low, and red for high
+        ctx.strokeStyle = `rgb(${windMag}, 0, ${255-windMag})`;
+
+        //apply gradient to line
+        var gradient = ctx.createLinearGradient(wstartX, wstartY, wdendX, wdendY);
+        gradient.addColorStop(0, `rgb(${windMag*0.5}, 0, ${255-windMag})`);
+        gradient.addColorStop(1, `rgb(${windMag}, 0, ${255-windMag*0.4})`);
+        ctx.strokeStyle = gradient;
+
+
+
+
         ctx.stroke();
     }
 
@@ -527,28 +619,6 @@ setInterval(() => {
     }
 }, 5000);
 
-
-//If Enter is pressed, send message to the groq API and try to get a response
-chatMessage.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-        const message =  chatInput.value;
-        chatInput.value = "";
-        chatMessage.value += "Here's a respond" + message;
-        // Send the message to the GROQ API
-        fetch("https://api.groq.dev/v1", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ message }),
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                const message = data.message;
-                chatMessage.value += "Here's a respond" + message;
-            });
-    }
-});
 
 
 
