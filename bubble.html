@@ -125,7 +125,25 @@
             Deus En Machina
         </div>
 
-        <div class="row flex-grow-1 h-100">
+        <div class="row flex-grow-1 h-100 w-100">
+        <!-- Hidden Restart Button -->
+            <div id="restart-button" 
+            class="position-absolute w-100 h-100 d-flex flex-column justify-content-center align-items-center d-none" 
+            style="background-color: rgba(0, 0, 0, 0.8); z-index: 10;">
+
+            <!-- Failure Message -->
+            <div id="failureReason" class="mb-3 text-center text-white fs-4">
+            Your entropy dropped below the threshold!
+            </div>
+
+            <!-- Restart Button -->
+            <div>
+            <button class="btn btn-primary px-4 py-2">Restart Game</button>
+            </div>
+            </div>
+
+
+
             <!-- Game Canvas -->
             <div id="game-canvas-container" class="col-12 col-sm-10 d-flex align-items-center justify-content-center">
                 <canvas id="bubble"></canvas>
@@ -135,8 +153,8 @@
             <div id="player-stats-container" class="col-12 col-sm-2 d-flex flex-column">
                 <h3>Player Stats</h3>
                 <ul id="player-stats">
-                    <li>Health: 100</li>
-                    <li>Elements Collected:</li>
+                    <li id="score">Score: 0</li>
+                    <li>Elements Collected: 0</li>
                     <li id="aveSpeed">Entropy: 0</li>
                 </ul>
                 <div id="health-bar" class="w-100">
@@ -144,8 +162,6 @@
                 </div>
                 <h3>Varticles collected</h3>
                 <ul id="varticles">
-                    <li>✤</li>
-                    <li>✤</li>
                 </ul>
 
             </div>

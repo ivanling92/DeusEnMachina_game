@@ -36,9 +36,14 @@ const frictionFactor = 0.999; // Friction factor
 
 
 const speedDisplay = document.getElementById("aveSpeed");
+const scoreDisplay = document.getElementById("score");
 
 //Get the ul element called varticles
 const varticles = document.getElementById("varticles");
+
+
+//Game Vars
+let score = 0;
 
 
 
@@ -55,10 +60,10 @@ function getSymbol(value){
         64: "❀",
         128: "❁",
         154: "❂",
-        185: "❈",
-        222: "✳",
-        266: "✷",
-        319: "✵",
+        186: "❈",
+        224: "✳",
+        270: "✷",
+        324: "✵",
     };
     return symbols[value] || "🌱";
 }
@@ -75,10 +80,10 @@ function getColor(value) {
       64: "rgb(48, 174, 223)", 
       128: "rgb(212, 212, 37)", 
       154: "rgb(73, 56, 149)",  
-      185: "rgb(34, 139, 34)", 
-      222: "rgb(241, 244, 60)", 
-      266: "rgb(27, 246, 227))", 
-      318: "rgb(255, 0, 255)",
+      186: "rgb(34, 139, 34)", 
+      224: "rgb(241, 244, 60)", 
+      270: "rgb(27, 246, 227))", 
+      324: "rgb(255, 0, 255)",
     };
     return colors[value] || "rgb(230, 150, 30)"; // Default to Earth Black
 }
@@ -149,7 +154,8 @@ class Bubble {
         }
     );
     speedDisplay.textContent = "Entropy:" + (totalSpeed/bubbles.length).toFixed(2);
-    if (totalSpeed < 0.2) {
+    scoreDisplay.textContent = "Score:" + Math.round(score);
+    if (totalSpeed/bubbles.length < 0.20) {
         gameOver();
         }
 
@@ -197,6 +203,10 @@ class Bubble {
         if (this.value === other.value && this.value%2 == 0) {
             if(this.value > 100){
                 this.value = Math.round(1.2*this.value);
+                if(this.value%2 ==1)
+                {
+                    this.value += 1;
+                }
                 this.radius = 20+(this.value*0.2); // Scale radius
             }
             else{
@@ -208,11 +218,16 @@ class Bubble {
           bubbles.splice(i, 1); // Remove the other bubble
           //Play a mp3 sound
         if(this.value > 100){
+            score += 100;
             const audio = new Audio("magicpop.mp3");
+            audio.volume = 0.7;
             audio.play();
         }
         else{
         const audio = new Audio("popsound.mp3");
+        //set volume to 50%
+        score += 10;
+        audio.volume = 0.1;
         audio.play();
         }
 
@@ -570,9 +585,8 @@ function animate() {
       bubbles.forEach((bubble) => bubble.update(bubbles, wind));
     } else {
         //GAME OVER Conditions
-        console.log("gameOver");
-        i++;
-        if (bubbles.length>=0 && i%20 ==2) {
+        if (bubbles.length>0) {
+            i++;
             console.log(i);
             console.log(bubbles.length);
             bubbles.pop(); // Removes the last bubble
@@ -585,13 +599,23 @@ function animate() {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2);
-        opacity += 0.001;
+        opacity += 0.01;
         }
         else{
-            console.log("Idle");
+        console.log("Idle");
+        ctx.fillStyle = `rgba(255, 40, 40, 1)`;
+        ctx.font = "60px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2);
+
+        button = document.getElementById("restart-button");
+        //remove the d-none class from the class list
+        button.classList.remove("d-none");
+        //add d-block class to the class list
+        button.classList.add("d-block");      
+        button.addEventListener("click", restartGame);
         }
-            
-      
     }
   
     requestAnimationFrame(animate);
@@ -613,11 +637,22 @@ const chatMessage = document.getElementById("chat-box");
 const chatInput = document.getElementById("chat-input");
 
 //add timer function that triggers every 5 seconds in game
+let play = 0;
 setInterval(() => {
     if(!isGameOver){
-        
+        play = 0;
+        score += 1;
     }
-}, 5000);
+    else{
+        if(play == 0){
+            play = 1;
+            console.log("gameOver");
+            const audio = new Audio("gameover_fin.mp3");
+            audio.play();
+        }
+    }
+
+}, 500);
 
 
 
@@ -637,3 +672,30 @@ function speakText(message) {
     // Speak the text
     window.speechSynthesis.speak(speech);
 }
+
+
+
+//restart game
+function restartGame(){
+    isGameOver = false;
+    bubbles.length = 0;
+    bubbles.push(...createBubbles(20));
+    opacity = 0;
+    button = document.getElementById("restart-button");
+    //remove the d-block class from the class list
+    button.classList.remove("d-block");
+    //add d-none class to the class list
+    button.classList.add("d-none");
+}
+
+
+
+//Cheats
+
+//When A is pressed, add 10 bubbles
+document.addEventListener("keydown", (e) => {
+    if (e.key === "a") {
+        const newBubbles = createBubbles(100);
+        bubbles.push(...newBubbles);
+    }
+});
