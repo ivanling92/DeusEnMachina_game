@@ -37,23 +37,31 @@ const frictionFactor = 0.999; // Friction factor
 
 const speedDisplay = document.getElementById("aveSpeed");
 const scoreDisplay = document.getElementById("score");
+const elementDisplay = document.getElementById("elements");
 const healthbar = document.getElementById("health-value");
 
 //Get the ul element called varticles
 const varticles = document.getElementById("varticles");
 const oddles = document.getElementById("oddles");
 
+
+//UI vars
+let curMouseX = 0;
+let curMouseY = 0;
+
 //tutorial flag
 let vacuumdrag = false;
 let oddleappear = false;
 let leftOddle = false;
 let iceOddle = false;
+let wonderingOddle = false;
 
 
 
 
 //Game Vars
 let score = 0;
+let numElements = 0;
 
 
 
@@ -65,6 +73,7 @@ function getSymbol(value){
         2: "✤",
         3: "❆",
         4: "✼",
+        5: "ꆛ",
         8: "✽",
         16: "✾",
         32: "✿",
@@ -86,6 +95,7 @@ function getColor(value) {
       2: "#3B6790",  
       3: "rgb(79, 221, 240)",
       4: "#9F8383",  
+      5: "rgb(222, 85, 35)",
       8: "rgb(46, 109, 118)",   
       16: "rgb(138, 51, 36)",  
       32: "rgb(10, 158, 29)", 
@@ -98,6 +108,24 @@ function getColor(value) {
       324: "rgb(255, 0, 255)",
     };
     return colors[value] || "rgb(230, 150, 30)"; // Default to Earth Black
+}
+
+
+//check if leaderboard cookie exists
+
+if(document.cookie.includes("leaderboard")){
+    const leaderboard_scores = JSON.parse(document.cookie.split("=")[1]);
+    leaderboard_scores.forEach(entry => {
+        const li = document.createElement("li");
+        li.textContent = `${entry.name}: ${entry.score}`;
+        leaderboard.appendChild(li);
+    });
+}
+else
+{
+    //create a new cookie
+    document.cookie = "leaderboard=[]";
+    console.log("leaderboard cookie created");
 }
 
 // Bubble class
@@ -171,6 +199,33 @@ class Bubble {
     if (this.value == 1){
         this.dx -= 0.5;
     }
+    else if(this.value == 3){
+        this.dx *= 0.2;
+        this.dy *= 0.2;
+    }
+    else if(this.value == 5){
+        //move away from current mouse cursor location
+        if(Math.abs(curMouseX - this.x) > 50)
+        {
+            this.dx = (curMouseX - this.x)*0.015;
+            if(!wonderingOddle){
+                wonderingOddle = true;
+                chatMessage.innerHTML = "New rule discovered! ꆛ Wandering Oddles can be moved by the cursor! <br/><br/>" + chatMessage.innerHTML;
+            }
+        }
+        else
+        {
+            this.dx = -(curMouseX - this.x)*0.08;
+        }
+        if(Math.abs(curMouseY - this.y) > 50)
+        {
+            this.dy = (curMouseY - this.y)*0.015;
+        }
+        else
+        {
+            this.dy = -(curMouseY - this.y)*0.08;
+        }
+    }
 
 
 
@@ -186,6 +241,7 @@ class Bubble {
     let healthWidth = ((totalSpeed / bubbles.length) - 0.2) / 1.5 * 100;
     healthbar.style.width = Math.min(healthWidth, 100) + "%";
     scoreDisplay.textContent = "Score:" + Math.round(score);
+    elementDisplay.textContent = "Elements found:" + numElements;
     if (totalSpeed/bubbles.length < 0.20) {
         gameOver();
         }
@@ -235,7 +291,7 @@ class Bubble {
             //check tutorial flag for left oddle
             if(!leftOddle){
                 leftOddle = true;
-                chatMessage.innerHTML = "New rule discovered! Heaver varticles can consume the black oddle! <br/><br/>" + chatMessage.innerHTML;
+                chatMessage.innerHTML = "New rule discovered! Heaver varticles can consume the ⬲ black oddle! <br/><br/>" + chatMessage.innerHTML;
             }
 
 
@@ -243,6 +299,13 @@ class Bubble {
             //accelerate the other bubble
             this.dx += -5;
         }
+
+        if(this.value == 5 && other.value == 5){
+            //delete other bubble
+            console.log("Oddle hit oddle");
+            bubbles.splice(i, 1);
+        }
+
          // If values match, merge bubbles
         if (this.value === other.value && this.value%2 == 0) {
             if(this.value > 100){
@@ -299,13 +362,23 @@ class Bubble {
 
         //If value > 200, add additional damping
         if(this.value > 100){
-            this.dx *= 0.5;
-            this.dy *= 0.5;
+            this.dx *= 0.7;
+            this.dy *= 0.7;
         }
 
         if(other.value > 100){
-            other.dx *= 0.5;
-            other.dy *= 0.5;
+            other.dx *= 0.7;
+            other.dy *= 0.7;
+        }
+
+        if(this.value > 220){
+            this.dx *= 0.7;
+            this.dy *= 0.7;
+        }
+
+        if(other.value > 220){
+            other.dx *= 0.7;
+            other.dy *= 0.7;
         }
 
 
@@ -365,6 +438,7 @@ function createBubbles(numBubbles) {
   return bubbles;
 }
 
+let oddleInit = [1, 1, 1, 1, 1, 1, 1, 1, 1];
 
 // Generate random bubbles
 function createOddles(numBubbles) {
@@ -372,18 +446,27 @@ function createOddles(numBubbles) {
         oddleappear = true;
         chatMessage.innerHTML = "New rule discovered! Oddles can appear spontaneously when too much kinetic energy is injected! They won't combine with each other! What a nuisance!<br/><br/>"+ chatMessage.innerHTML;
     }
-    const values = [1, 1, 1, 1, 1, 1, 1, 1, 1];
+    const values = oddleInit;
     //If varticle list contains ✳
     if(varticles.innerHTML.includes("❈")){
         values.push(3);
     }
+
+    if(varticles.innerHTML.includes("✳")){
+        values.push(5);
+    }
+
+
 
     const bubbles = [];
     for (let i = 0; i < numBubbles; i++) {
       const value = values[Math.floor(Math.random() * values.length)];
       let radius = 20+(value*0.5); // Scale radius
       if(value == 3){
-          radius = 100;
+          radius = 60;
+      }
+      if(value == 5){
+          radius = 30;
       }
 
       //Only create bubbles in blank spaces
@@ -451,6 +534,10 @@ canvas.addEventListener("mousemove", (e) => {
 });
 
 canvas.addEventListener("mouseup", (e) => {
+
+    if(!isDragging){
+        return;
+    }
     isDragging = false;
     let endX = e.clientX;
     let endY = e.clientY;
@@ -480,6 +567,13 @@ canvas.addEventListener("mouseup", (e) => {
         }
         bubbles.push(...newBubbles);
     }
+});
+
+
+//Handle mouse move
+document.addEventListener('mousemove', (event) => {
+    curMouseX = event.clientX;
+    curMouseY = event.clientY;
 });
 
 
@@ -515,6 +609,9 @@ canvas.addEventListener("touchmove", (e) => {
     });
 
 canvas.addEventListener("touchend", (e) => {
+    if(!isDragging){
+        return;
+    }
     isDragging = false;
     let endX = e.changedTouches[0].clientX;
     let endY = e.changedTouches[0].clientY;
@@ -561,6 +658,9 @@ canvas.addEventListener("touchend", (e) => {
 canvas.addEventListener("click", (e) => {
     const x = e.clientX;
     const y = e.clientY;
+    //Temporary disable mouse up and touch end
+    isDragging = false;
+
     bubbles.forEach((bubble) => {
         const dx = x - bubble.x;
         const dy = y - bubble.y;
@@ -587,7 +687,7 @@ canvas.addEventListener("click", (e) => {
 
                     if(!iceOddle){
                         iceOddle = true;
-                        chatMessage.innerHTML = "New rule discovered! Ice varticles can be removed by clicking them! <br/><br/>" + chatMessage.innerHTML;
+                        chatMessage.innerHTML = "New rule discovered! ❆ Ice oddles can be removed by clicking them! <br/><br/>" + chatMessage.innerHTML;
                     }
                 }
             }
@@ -728,6 +828,8 @@ setInterval(() => {
     if(!isGameOver){
         play = 0;
         score += 1;
+        //Set numElements to the number of unique elements Varticles and Oddles
+        numElements = varticles.children.length + oddles.children.length;
     }
     else{
         if(play == 0){
@@ -762,6 +864,10 @@ function speakText(message) {
 
 function restartGame() {
     isGameOver = false;
+
+    //Clear the value of the varticles and oddles
+    varticles.innerHTML = "";
+    oddles.innerHTML = "";
 
     // Get the leaderboard element
     const leaderboard = document.getElementById("leaderboard");
@@ -803,6 +909,10 @@ function restartGame() {
         leaderboard.appendChild(li);
     });
 
+    //save leaderboard to cookie
+    document.cookie = "leaderboard=" + JSON.stringify(leaderboard_scores);
+
+
     // Reset game state
     bubbles.length = 0;
     bubbles.push(...createBubbles(20)); // Add initial bubbles
@@ -829,4 +939,10 @@ document.addEventListener("keydown", (e) => {
         const newBubbles = createBubbles(100);
         bubbles.push(...newBubbles);
     }
+    if (e.key === "5" && !isGameOver) {
+        oddleInit = [1, 3, 5];
+        const oddles = createOddles(10);
+        bubbles.push(...oddles);
+    }
+
 });
