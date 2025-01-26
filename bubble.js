@@ -44,6 +44,11 @@ const healthbar = document.getElementById("health-value");
 const varticles = document.getElementById("varticles");
 const oddles = document.getElementById("oddles");
 
+//Sounds
+const mpop = new Audio("magicpop.mp3");
+const pop = new Audio("popsound.mp3");
+const panicmusicplayer = new Audio("almostend.mp3");
+
 
 //UI vars
 let curMouseX = 0;
@@ -62,6 +67,7 @@ let wonderingOddle = false;
 //Game Vars
 let score = 0;
 let numElements = 0;
+let speed = 0;
 
 
 
@@ -162,6 +168,9 @@ class Bubble {
         const div = document.createElement('div');
         div.classList.add('varticle-square');
         div.style.backgroundColor = getColor(this.value);
+        div.style.display = 'flex';
+        div.style.justifyContent = 'center';
+        div.style.alignItems = 'center';
         div.textContent = symbol;
         li.appendChild(div);
         varticles.appendChild(li);
@@ -172,6 +181,10 @@ class Bubble {
         const div = document.createElement('div');
         div.classList.add('varticle-square');
         div.style.backgroundColor = getColor(this.value);
+        //align text center vertically
+        div.style.display = 'flex';
+        div.style.justifyContent = 'center';
+        div.style.alignItems = 'center';
         div.textContent = symbol;
         li.appendChild(div);
         oddles.appendChild(li);
@@ -179,7 +192,9 @@ class Bubble {
 
 
     ctx.fillText(symbol, this.x, this.y);
-  }
+    }
+
+
 
   update(bubbles, wind) {
     // Apply wind force
@@ -207,7 +222,7 @@ class Bubble {
         //move away from current mouse cursor location
         if(Math.abs(curMouseX - this.x) > 50)
         {
-            this.dx = (curMouseX - this.x)*0.015;
+            this.dx += (curMouseX - this.x)*0.0005;
             if(!wonderingOddle){
                 wonderingOddle = true;
                 chatMessage.innerHTML = "New rule discovered! ꆛ Wandering Oddles can be moved by the cursor! <br/><br/>" + chatMessage.innerHTML;
@@ -215,34 +230,49 @@ class Bubble {
         }
         else
         {
-            this.dx = -(curMouseX - this.x)*0.08;
+            this.dx += -(curMouseX - this.x)*0.0008;
         }
         if(Math.abs(curMouseY - this.y) > 50)
         {
-            this.dy = (curMouseY - this.y)*0.015;
+            this.dy += (curMouseY - this.y)*0.0005;
         }
         else
         {
-            this.dy = -(curMouseY - this.y)*0.08;
+            this.dy += -(curMouseY - this.y)*0.0008;
         }
     }
 
 
 
     //If after mouse up the average speed of all bubble is near 0, trigger game over text
-    let totalSpeed = 0;
+      let totalSpeed = 0;
+      let numbubs = 0;
     bubbles.forEach((bubble) => {
             if(bubble.value%2 == 0){
-            totalSpeed += Math.abs(bubble.dx) + Math.abs(bubble.dy);
+                totalSpeed += Math.abs(bubble.dx) + Math.abs(bubble.dy);
+                numbubs++;
             }   
         }
-    );
-    speedDisplay.textContent = "Entropy:" + (totalSpeed/bubbles.length).toFixed(2);
-    let healthWidth = ((totalSpeed / bubbles.length) - 0.2) / 1.5 * 100;
-    healthbar.style.width = Math.min(healthWidth, 100) + "%";
+      );
+      speed = (totalSpeed / numbubs);
+      if (speed == Math.nan) {
+          speed = 0.00;
+      }
+
+      if (!isGameOver) {
+          speedDisplay.textContent = "Entropy:" + (speed).toFixed(2);
+      }
+      else {
+          speedDisplay.textContent = "Entropy: 0.00";
+      }
+      let healthWidth = ((speed) - 0.2) / 1.5 * 100;
+      
+      healthbar.style.width = Math.min(healthWidth, 100) + "%";
+
     scoreDisplay.textContent = "Score:" + Math.round(score);
     elementDisplay.textContent = "Elements found:" + numElements;
-    if (totalSpeed/bubbles.length < 0.20) {
+      if (speed < 0.20) {
+        speedDisplay.textContent = "Entropy: 0.00";
         gameOver();
         }
 
@@ -284,7 +314,7 @@ class Bubble {
       if (distance < minDistance) {
        
         //Special case for ODDLES
-        if(this.value > 100 && other.value == 1){
+        if(this.value > 150 && other.value == 1){
             //delete this bubble
             console.log("Oddle hit bubble");
 
@@ -304,6 +334,7 @@ class Bubble {
             //delete other bubble
             console.log("Oddle hit oddle");
             bubbles.splice(i, 1);
+            bubbles.splice(this.index, 1);
         }
 
          // If values match, merge bubbles
@@ -326,16 +357,15 @@ class Bubble {
           //Play a mp3 sound
         if(this.value > 100){
             score += 100;
-            const audio = new Audio("magicpop.mp3");
-            audio.volume = 0.7;
-            audio.play();
+            mpop.volume = 0.7;
+            mpop.play();
         }
         else{
-        const audio = new Audio("popsound.mp3");
+        
         //set volume to 50%
         score += 10;
-        audio.volume = 0.1;
-        audio.play();
+        pop.volume = 0.1;
+        pop.play();
         }
           continue;
         }
@@ -671,18 +701,8 @@ canvas.addEventListener("click", (e) => {
             if(bubble.value == 3){
                 const index = bubbles.indexOf(bubble);
                 if(index > -1){
-                    //also remove everything touching this bubble
-                    bubbles.forEach((other) => {
-                        const dx = bubble.x - other.x;
-                        const dy = bubble.y - other.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance < bubble.radius) {
-                            const index = bubbles.indexOf(other);
-                            if(index > -1){
-                                bubbles.splice(index, 1);
-                            }
-                        }
-                    });
+                   
+                    
                     bubbles.splice(index, 1);
 
                     if(!iceOddle){
@@ -801,6 +821,10 @@ function animate() {
         //add d-block class to the class list
         restartmodal.classList.add("d-block");      
         const restartbutton = document.getElementById("restart-button");
+
+        panicmusic = false;
+        panicmusicplayer.pause();
+
         restartbutton.addEventListener("click", restartGame);
         }
     }
@@ -824,12 +848,84 @@ const chatMessage = document.getElementById("chat-box");
 
 //add timer function that triggers every 5 seconds in game
 let play = 0;
+let panicmusic = false;
+
+
+
 setInterval(() => {
     if(!isGameOver){
         play = 0;
-        score += 1;
+        score += 0.1;
         //Set numElements to the number of unique elements Varticles and Oddles
         numElements = varticles.children.length + oddles.children.length;
+        if (speed > 2) {
+            let currentColour = getComputedStyle(canvas).backgroundColor || "rgb(34, 34, 34)"; // Get the computed background color
+            // Extract the RGB components from the current background color
+            let rgbMatch = currentColour.match(/rgb\((\d+), (\d+), (\d+)\)/);
+            if (rgbMatch) {
+                let r = parseFloat(rgbMatch[1]);
+                let g = parseFloat(rgbMatch[2]);
+                let b = parseFloat(rgbMatch[3]);
+
+                // Smoothly fade to blue by reducing red and green and increasing blue
+                let fadeSpeed = 5; // Adjust fade speed as necessary
+                r = r - fadeSpeed;
+                g = g - fadeSpeed;
+                b = b + fadeSpeed;
+                // Update the canvas background color
+                console.log(`Fading: ${r}, ${g}, ${b}`);
+                canvas.style.backgroundColor = `rgb(${Math.max(50, Math.round(r))}, ${Math.max(34, Math.round(g))}, ${Math.min(100, Math.round(b))})`;
+                if (panicmusic && panicmusicplayer.volume > 0.05) {
+                    panicmusicplayer.volume -= 0.05;
+                }
+                else {
+                    panicmusic = false;
+                    panicmusicplayer.pause();
+                }
+
+                
+            }
+        }
+        else {
+            let currentColour = getComputedStyle(canvas).backgroundColor || "rgb(34, 34, 34)"; // Get the computed background color
+            console.log("Fading back to original");
+
+            // Extract the RGB components from the current background color
+            let rgbMatch = currentColour.match(/rgb\((\d+), (\d+), (\d+)\)/);
+            if (rgbMatch) {
+                let r = parseInt(rgbMatch[1]);
+                let g = parseInt(rgbMatch[2]);
+                let b = parseInt(rgbMatch[3]);
+
+                // Smoothly fade back to original color by increasing red and green and decreasing blue
+                let fadeSpeed = 2; // Adjust fade speed as necessary
+                r = Math.min(70, r + fadeSpeed); // Target original red value
+                g = Math.min(34, g + fadeSpeed); // Target original green value
+                b = Math.max(34, b - fadeSpeed); // Target original blue value
+
+                // Update the canvas background color
+                canvas.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+
+                if (!panicmusic) {
+                    panicmusic = true;
+                    panicmusicplayer.volume = 0.00;
+                    panicmusicplayer.play();
+                }
+                else {
+                    if (panicmusicplayer.volume < 0.5) {
+                        panicmusicplayer.volume += 0.01;
+                    }
+                    else {
+                        panicmusicplayer.volume = 0.5;
+                    }
+                    
+                }
+                
+            }
+
+        }
+        
+
     }
     else{
         if(play == 0){
@@ -840,7 +936,7 @@ setInterval(() => {
         }
     }
 
-}, 500);
+}, 200);
 
 
 
@@ -894,7 +990,8 @@ function restartGame() {
     }
 
     // Add the new score to the array
-    leaderboard_scores.push({ name: playerName, score });
+    score = Math.round(score);
+    leaderboard_scores.push({ name: playerName, score});
 
     // Sort the scores in descending order and keep the top 5
     leaderboard_scores = leaderboard_scores
