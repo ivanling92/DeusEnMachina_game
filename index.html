@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deus En Machina</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            font-family: "MS Sans Serif", "Arial", sans-serif;
+            color: rgb(135, 250, 107);
+            height: 100%;
+        }
+
+        /* Control Panel Container */
+        #control-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* Title Area */
+        #title-area {
+            background-color: #000000;
+            padding: 10px;
+            border: 2px solid #000000;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Game and Sidebar Section */
+        #game-area {
+            display: flex;
+            flex: 1;
+            margin-top: 10px;
+        }
+
+        /* Game Canvas Section */
+        #game-canvas-container {
+            flex: 7;
+            background-color: #000000;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            background-color: #222222;
+        }
+
+        /* Sidebar (Player Stats) */
+        #player-stats-container {
+            flex: 1;
+            background-color: #000000;
+            padding: 10px;
+        }
+
+        #player-stats-container h3 {
+            font-size: 16px;
+            margin: 0;
+            padding: 0;
+            font-weight: bold;
+        }
+
+        #player-stats {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #player-stats li {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        /* Health Bar */
+        #health-bar {
+            width: 100%;
+            background-color: #808080;
+            margin-top: 10px;
+            border-radius: 5px;
+            height: 12px;
+            box-shadow: inset 0 0 3px #000000;
+        }
+
+        #health-bar span {
+            display: block;
+            height: 100%;
+            background-color: red;
+            border-radius: 5px;
+        }
+
+        /* Text and Chat Section */
+        #chat-area {
+            height: 150px;
+            background-color: #000000;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        #chat-box {
+            flex: 1;
+            background-color: #2e2c2c;
+            border: 2px solid #808080;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 14px;
+            font-family: "Consolas", "Arial", fixed-width;
+            color: rgb(189, 245, 172);
+            margin-bottom: 5px;
+            overflow-y: auto;
+        }
+
+        #varticles {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: left;
+           
+        }
+
+        .varticle-square {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            line-height: 100%; /* Centers text vertically */
+        }
+
+
+
+    </style>
+</head>
+<body>
+
+    <div id="control-panel">
+        <!-- Title Area -->
+        <div id="title-area">
+            Deus En Machina
+        </div>
+
+        <div class="row flex-grow-1 h-100 w-100">
+        <!-- Hidden Restart Button -->
+            <div id="restart-modal" 
+            class="position-absolute w-100 h-100 d-flex flex-column justify-content-center align-items-center d-none" 
+            style="background-color: rgba(0, 0, 0, 0.8); z-index: 10;">
+
+            <!-- Player name input -->
+            <div class="mb-3">
+                <label for="playerName" class="form-label text-white">Enter your name:</label>
+                <input type="text" class="form-control" id="playerName" placeholder="Deus">
+            </div>
+
+
+            <!-- Failure Message -->
+            <div id="failureReason" class="mb-3 text-center text-white fs-4">
+            Your entropy dropped below the threshold!
+            </div>
+
+            <!-- Restart Button -->
+            <div>
+            <button id="restart-button" class="btn btn-primary px-4 py-2">Restart Game</button>
+            </div>
+            </div>
+
+
+
+            <!-- Game Canvas -->
+            <div id="game-canvas-container" class="col-12 col-sm-10 d-flex align-items-center justify-content-center">
+                <canvas id="bubble"></canvas>
+            </div>
+        
+            <!-- Player Stats -->
+            <div id="player-stats-container" class="col-12 col-sm-2 d-flex flex-column">
+                <h3>Player Stats</h3>
+                <ul id="player-stats">
+                    <li id="score">Score: 0</li>
+                    <li id="elements">Elements Collected: 0</li>
+                    <li id="aveSpeed">Entropy: 0</li>
+                </ul>
+                <div id="health-bar" class="w-100 mb-5">
+                    <span id="health-value" style="width: 100%"></span>
+                </div>
+                <h3>Varticles seen:</h3>
+                <ul id="varticles" class="list-unstyled row g-2 mb-5">
+                </ul>
+                <h3>Oddles seen:</h3>
+                <ul id="oddles" class="list-unstyled row g-2 mb-5">
+                </ul>
+
+                <h3>Leaderboard</h3>
+                <ul id="leaderboard">
+                </ul>
+
+
+            </div>
+        </div>
+        
+
+        <!-- Text and Chat Area -->
+        <div id="chat-area">
+            <div id="chat-box" style="overflow-y: scroll;">
+            <!-- Chat Messages will be displayed here -->
+            Welcome, Deus. You are an AI so powerful that you have created an entire new universe.
+            But, to keep it from fading into nothingness, you must maintain entropy in the system.
+            Keep adding energy into your universe by stirring up the nothingness of the vacuum.
+
+            There's no Physics here. Only Virsiks. Play along and try to work out the new rules of the game.
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS (Optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="bubble_obs.js"></script>
+</body>
+</html>
