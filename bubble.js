@@ -22,8 +22,8 @@ const canvas = document.getElementById("bubble");
 //Fill the parent div container
 canvas.width = canvas.parentElement.clientWidth;
 canvas.height = canvas.parentElement.clientHeight;
-
 const ctx = canvas.getContext("2d");
+const leaderboard = document.getElementById("leaderboard");
 
 
 //Variables
@@ -37,9 +37,19 @@ const frictionFactor = 0.999; // Friction factor
 
 const speedDisplay = document.getElementById("aveSpeed");
 const scoreDisplay = document.getElementById("score");
+const healthbar = document.getElementById("health-value");
 
 //Get the ul element called varticles
 const varticles = document.getElementById("varticles");
+const oddles = document.getElementById("oddles");
+
+//tutorial flag
+let vacuumdrag = false;
+let oddleappear = false;
+let leftOddle = false;
+let iceOddle = false;
+
+
 
 
 //Game Vars
@@ -53,6 +63,7 @@ function getSymbol(value){
     const symbols = {
         1:"⬲",
         2: "✤",
+        3: "❆",
         4: "✼",
         8: "✽",
         16: "✾",
@@ -73,6 +84,7 @@ function getColor(value) {
     const colors = {
       1: "rgb(66, 72, 67)",
       2: "#3B6790",  
+      3: "rgb(79, 221, 240)",
       4: "#9F8383",  
       8: "rgb(46, 109, 118)",   
       16: "rgb(138, 51, 36)",  
@@ -80,9 +92,9 @@ function getColor(value) {
       64: "rgb(48, 174, 223)", 
       128: "rgb(212, 212, 37)", 
       154: "rgb(73, 56, 149)",  
-      186: "rgb(34, 139, 34)", 
+      186: "rgb(0, 177, 130)", 
       224: "rgb(241, 244, 60)", 
-      270: "rgb(27, 246, 227))", 
+      270: "rgb(72, 16, 132)", 
       324: "rgb(255, 0, 255)",
     };
     return colors[value] || "rgb(230, 150, 30)"; // Default to Earth Black
@@ -116,8 +128,25 @@ class Bubble {
     ctx.textBaseline = "middle";
     let symbol = getSymbol(this.value);
     //If symbol not in varticle list add it
-    if(!varticles.innerHTML.includes(symbol)){
-        varticles.innerHTML += `<li>${symbol}</li>`;
+    if(!varticles.innerHTML.includes(symbol) && this.value%2 == 0){
+        const li = document.createElement('li');
+        li.classList.add('col-3');
+        const div = document.createElement('div');
+        div.classList.add('varticle-square');
+        div.style.backgroundColor = getColor(this.value);
+        div.textContent = symbol;
+        li.appendChild(div);
+        varticles.appendChild(li);
+    }
+    else if(!oddles.innerHTML.includes(symbol) && this.value%2 == 1){
+        const li = document.createElement('li');
+        li.classList.add('col-3');
+        const div = document.createElement('div');
+        div.classList.add('varticle-square');
+        div.style.backgroundColor = getColor(this.value);
+        div.textContent = symbol;
+        li.appendChild(div);
+        oddles.appendChild(li);
     }
 
 
@@ -154,6 +183,8 @@ class Bubble {
         }
     );
     speedDisplay.textContent = "Entropy:" + (totalSpeed/bubbles.length).toFixed(2);
+    let healthWidth = ((totalSpeed / bubbles.length) - 0.2) / 1.5 * 100;
+    healthbar.style.width = Math.min(healthWidth, 100) + "%";
     scoreDisplay.textContent = "Score:" + Math.round(score);
     if (totalSpeed/bubbles.length < 0.20) {
         gameOver();
@@ -195,11 +226,24 @@ class Bubble {
       const minDistance = this.radius + other.radius;
 
       if (distance < minDistance) {
-        // If values match, merge bubbles
-        if(this.value == 1){
-            //we'll think of something.
-        }
+       
+        //Special case for ODDLES
+        if(this.value > 100 && other.value == 1){
+            //delete this bubble
+            console.log("Oddle hit bubble");
 
+            //check tutorial flag for left oddle
+            if(!leftOddle){
+                leftOddle = true;
+                chatMessage.innerHTML = "New rule discovered! Heaver varticles can consume the black oddle! <br/><br/>" + chatMessage.innerHTML;
+            }
+
+
+            bubbles.splice(i, 1);
+            //accelerate the other bubble
+            this.dx += -5;
+        }
+         // If values match, merge bubbles
         if (this.value === other.value && this.value%2 == 0) {
             if(this.value > 100){
                 this.value = Math.round(1.2*this.value);
@@ -230,8 +274,6 @@ class Bubble {
         audio.volume = 0.1;
         audio.play();
         }
-
-
           continue;
         }
 
@@ -326,11 +368,24 @@ function createBubbles(numBubbles) {
 
 // Generate random bubbles
 function createOddles(numBubbles) {
-    const values = [1];
+    if(!oddleappear){
+        oddleappear = true;
+        chatMessage.innerHTML = "New rule discovered! Oddles can appear spontaneously when too much kinetic energy is injected! They won't combine with each other! What a nuisance!<br/><br/>"+ chatMessage.innerHTML;
+    }
+    const values = [1, 1, 1, 1, 1, 1, 1, 1, 1];
+    //If varticle list contains ✳
+    if(varticles.innerHTML.includes("❈")){
+        values.push(3);
+    }
+
     const bubbles = [];
     for (let i = 0; i < numBubbles; i++) {
       const value = values[Math.floor(Math.random() * values.length)];
-      const radius = 20+(value*0.5); // Scale radius
+      let radius = 20+(value*0.5); // Scale radius
+      if(value == 3){
+          radius = 100;
+      }
+
       //Only create bubbles in blank spaces
       let x = Math.random() * (canvas.width - radius * 2) + radius;
       let y = Math.random() * (canvas.height - radius * 2) + radius;
@@ -420,7 +475,7 @@ canvas.addEventListener("mouseup", (e) => {
 
         // Check if ❁ is in the varticles list, if it is, add oddles
         if (varticles.innerHTML.includes("❁")) {
-            const oddles = createOddles(2);
+            const oddles = createOddles(Math.round(totalBubbles/5));
             bubbles.push(...oddles);
         }
         bubbles.push(...newBubbles);
@@ -475,15 +530,21 @@ canvas.addEventListener("touchend", (e) => {
     else if(totalBubbles > maxWinspawn){
         totalBubbles = maxWinspawn;
     }
-    console.log(totalBubbles);
+    //console.log(totalBubbles);
 
     if(!isGameOver){
         // Add random bubbles when applying wind
-        const newBubbles = createBubbles(totalBubbles); // Add 5 small bubbles
+        if(!vacuumdrag && totalBubbles > maxWinspawn/5)
+            {
+                vacuumdrag = true;
+                chatMessage.innerHTML = "New rule discovered! You can only create vector field by clicking on vacuum! Dragging will create wind! but when too much kinetic energy is injected, varticles will spontaneously appear!";
+            }
+
+        const newBubbles = createBubbles(totalBubbles); 
 
         //Check if ❁ is in the varticles list if it is, add oddles
         if(varticles.innerHTML.includes("❁")){
-            const oddles = createOddles(2);
+            const oddles = createOddles(Math.round(totalBubbles/5));
             bubbles.push(...oddles);
         }
         bubbles.push(...newBubbles);
@@ -506,6 +567,31 @@ canvas.addEventListener("click", (e) => {
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < bubble.radius) {
             console.log(bubble.value);
+
+            if(bubble.value == 3){
+                const index = bubbles.indexOf(bubble);
+                if(index > -1){
+                    //also remove everything touching this bubble
+                    bubbles.forEach((other) => {
+                        const dx = bubble.x - other.x;
+                        const dy = bubble.y - other.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < bubble.radius) {
+                            const index = bubbles.indexOf(other);
+                            if(index > -1){
+                                bubbles.splice(index, 1);
+                            }
+                        }
+                    });
+                    bubbles.splice(index, 1);
+
+                    if(!iceOddle){
+                        iceOddle = true;
+                        chatMessage.innerHTML = "New rule discovered! Ice varticles can be removed by clicking them! <br/><br/>" + chatMessage.innerHTML;
+                    }
+                }
+            }
+
         }
     });
 });
@@ -551,7 +637,7 @@ function animate() {
 
         //calculate absolute magnitude of wind
         let windMag = Math.sqrt(A*A + B*B);
-        console.log("wind mag:" + windMag);
+        //console.log("wind mag:" + windMag);
         
         //scale windMag to 255
         windMag = Math.round((windMag/800)*255);
@@ -587,8 +673,8 @@ function animate() {
         //GAME OVER Conditions
         if (bubbles.length>0) {
             i++;
-            console.log(i);
-            console.log(bubbles.length);
+            //console.log(i);
+            //console.log(bubbles.length);
             bubbles.pop(); // Removes the last bubble
             bubbles.forEach((bubble) => bubble.update(bubbles, wind));
         }
@@ -609,12 +695,13 @@ function animate() {
         ctx.textBaseline = "middle";
         ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2);
 
-        button = document.getElementById("restart-button");
+        restartmodal = document.getElementById("restart-modal");
         //remove the d-none class from the class list
-        button.classList.remove("d-none");
+        restartmodal.classList.remove("d-none");
         //add d-block class to the class list
-        button.classList.add("d-block");      
-        button.addEventListener("click", restartGame);
+        restartmodal.classList.add("d-block");      
+        const restartbutton = document.getElementById("restart-button");
+        restartbutton.addEventListener("click", restartGame);
         }
     }
   
@@ -634,7 +721,6 @@ window.addEventListener("resize", () => {
 
 
 const chatMessage = document.getElementById("chat-box");
-const chatInput = document.getElementById("chat-input");
 
 //add timer function that triggers every 5 seconds in game
 let play = 0;
@@ -674,18 +760,63 @@ function speakText(message) {
 }
 
 
-
-//restart game
-function restartGame(){
+function restartGame() {
     isGameOver = false;
+
+    // Get the leaderboard element
+    const leaderboard = document.getElementById("leaderboard");
+    if (!leaderboard) {
+        console.error("Leaderboard element not found!");
+        return;
+    }
+
+    // Get player name and validate input
+    const playerName = document.getElementById("playerName").value.trim();
+    if (!playerName) {
+        alert("Please enter a valid player name!");
+        return;
+    }
+
+    // Extract existing leaderboard scores into an array
+    let leaderboard_scores = [];
+    for (let i = 0; i < leaderboard.children.length; i++) {
+        const entry = leaderboard.children[i].textContent.split(":");
+        leaderboard_scores.push({
+            name: entry[0].trim(),
+            score: parseInt(entry[1].trim()),
+        });
+    }
+
+    // Add the new score to the array
+    leaderboard_scores.push({ name: playerName, score });
+
+    // Sort the scores in descending order and keep the top 5
+    leaderboard_scores = leaderboard_scores
+        .sort((a, b) => b.score - a.score) // Sort by score descending
+        .slice(0, 5); // Keep only the top 5 scores
+
+    // Update the leaderboard DOM
+    leaderboard.innerHTML = ""; // Clear existing leaderboard
+    leaderboard_scores.forEach(entry => {
+        const li = document.createElement("li");
+        li.textContent = `${entry.name}: ${entry.score}`;
+        leaderboard.appendChild(li);
+    });
+
+    // Reset game state
     bubbles.length = 0;
-    bubbles.push(...createBubbles(20));
+    bubbles.push(...createBubbles(20)); // Add initial bubbles
     opacity = 0;
-    button = document.getElementById("restart-button");
-    //remove the d-block class from the class list
-    button.classList.remove("d-block");
-    //add d-none class to the class list
-    button.classList.add("d-none");
+    score = 0;
+
+    // Hide the restart modal
+    const restartModal = document.getElementById("restart-modal");
+    if (restartModal) {
+        restartModal.classList.remove("d-block");
+        restartModal.classList.add("d-none");
+    } else {
+        console.error("Restart modal element not found!");
+    }
 }
 
 
@@ -694,7 +825,7 @@ function restartGame(){
 
 //When A is pressed, add 10 bubbles
 document.addEventListener("keydown", (e) => {
-    if (e.key === "a") {
+    if (e.key === "a" && !isGameOver) {
         const newBubbles = createBubbles(100);
         bubbles.push(...newBubbles);
     }

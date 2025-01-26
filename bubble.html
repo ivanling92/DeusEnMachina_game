@@ -115,6 +115,29 @@
             margin-bottom: 5px;
             overflow-y: auto;
         }
+
+        #varticles {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: left;
+            margin: 10px;
+        }
+
+        .varticle-square {
+            width: 100%;
+            height: 0;
+            padding-bottom: 100%; /* To make the div a square */
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            line-height: 100%; /* Centers text vertically */
+        }
+
+
+
     </style>
 </head>
 <body>
@@ -127,9 +150,16 @@
 
         <div class="row flex-grow-1 h-100 w-100">
         <!-- Hidden Restart Button -->
-            <div id="restart-button" 
+            <div id="restart-modal" 
             class="position-absolute w-100 h-100 d-flex flex-column justify-content-center align-items-center d-none" 
             style="background-color: rgba(0, 0, 0, 0.8); z-index: 10;">
+
+            <!-- Player name input -->
+            <div class="mb-3">
+                <label for="playerName" class="form-label text-white">Enter your name:</label>
+                <input type="text" class="form-control" id="playerName" placeholder="Deus">
+            </div>
+
 
             <!-- Failure Message -->
             <div id="failureReason" class="mb-3 text-center text-white fs-4">
@@ -138,7 +168,7 @@
 
             <!-- Restart Button -->
             <div>
-            <button class="btn btn-primary px-4 py-2">Restart Game</button>
+            <button id="restart-button" class="btn btn-primary px-4 py-2">Restart Game</button>
             </div>
             </div>
 
@@ -157,12 +187,20 @@
                     <li>Elements Collected: 0</li>
                     <li id="aveSpeed">Entropy: 0</li>
                 </ul>
-                <div id="health-bar" class="w-100">
+                <div id="health-bar" class="w-100 mb-5">
                     <span id="health-value" style="width: 100%"></span>
                 </div>
                 <h3>Varticles collected</h3>
-                <ul id="varticles">
+                <ul id="varticles" class="list-unstyled row g-2 mb-5">
                 </ul>
+                <h3>Oddles collected</h3>
+                <ul id="oddles" class="list-unstyled row g-2 mb-5">
+                </ul>
+
+                <h3>Leaderboard</h3>
+                <ul id="leaderboard">
+                </ul>
+
 
             </div>
         </div>
@@ -170,13 +208,13 @@
 
         <!-- Text and Chat Area -->
         <div id="chat-area">
-            <div id="chat-box">
-                <!-- Chat Messages will be displayed here -->
-                Welcome, Deus. You are an AI so powerful that you have created an entire new universe.
-                But, to keep it from fading into nothingness, you must maintain entropy in the system.
-                Keep adding energy into your universe by stirring up the nothingness of the vacuum.
+            <div id="chat-box" style="overflow-y: scroll;">
+            <!-- Chat Messages will be displayed here -->
+            Welcome, Deus. You are an AI so powerful that you have created an entire new universe.
+            But, to keep it from fading into nothingness, you must maintain entropy in the system.
+            Keep adding energy into your universe by stirring up the nothingness of the vacuum.
 
-                There's no Physics here. Only Virsiks. Play along and try to work out the new rules of the game.
+            There's no Physics here. Only Virsiks. Play along and try to work out the new rules of the game.
             </div>
         </div>
     </div>
