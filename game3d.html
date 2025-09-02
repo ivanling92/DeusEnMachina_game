@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deus En Machina</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Deus En Machina - 3D Version</title>
     <style>
         body, html {
             margin: 0;
@@ -47,12 +45,14 @@
         #game-canvas-container {
             flex: 7;
             background-color: #000000;
+            position: relative;
         }
 
         canvas {
             width: 100%;
             height: 100%;
-            background-color: #222222;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            cursor: crosshair;
         }
 
         /* Sidebar (Player Stats) */
@@ -123,7 +123,6 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: left;
-           
         }
 
         .varticle-square {
@@ -163,8 +162,18 @@
             color: #000000;
         }
 
-
-
+        /* 3D Controls Info */
+        .controls-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: rgb(135, 250, 107);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+        }
     </style>
 </head>
 <body>
@@ -172,10 +181,10 @@
     <div id="control-panel">
         <!-- Title Area -->
         <div id="title-area">
-            <div>Deus En Machina</div>
+            <div>Deus En Machina - 3D Version</div>
             <div class="version-nav">
-                <a href="index.html" class="version-btn active">2D Version</a>
-                <a href="game3d.html" class="version-btn">3D Version</a>
+                <a href="index.html" class="version-btn">2D Version</a>
+                <a href="game3d.html" class="version-btn active">3D Version</a>
             </div>
         </div>
 
@@ -191,7 +200,6 @@
                 <input type="text" class="form-control" id="playerName" placeholder="Deus">
             </div>
 
-
             <!-- Failure Message -->
             <div id="failureReason" class="mb-3 text-center text-white fs-4">
             Your entropy dropped below the threshold!
@@ -203,11 +211,16 @@
             </div>
             </div>
 
-
-
             <!-- Game Canvas -->
             <div id="game-canvas-container" class="col-12 col-sm-10 d-flex align-items-center justify-content-center">
-                <canvas id="bubble"></canvas>
+                <canvas id="game-canvas"></canvas>
+                <div class="controls-info">
+                    <strong>3D Controls:</strong><br>
+                    • Drag to create wind forces<br>
+                    • Right-click + drag to rotate view<br>
+                    • Scroll to zoom in/out<br>
+                    • Spheres move in 3D space
+                </div>
             </div>
         
             <!-- Player Stats -->
@@ -231,27 +244,23 @@
                 <h3>Leaderboard</h3>
                 <ul id="leaderboard">
                 </ul>
-
-
             </div>
         </div>
         
-
         <!-- Text and Chat Area -->
         <div id="chat-area">
             <div id="chat-box" style="overflow-y: scroll;">
             <!-- Chat Messages will be displayed here -->
-            Welcome, Deus. You are an AI so powerful that you have created an entire new universe.
+            Welcome to the 3D universe, Deus. You are an AI so powerful that you have created an entire new 3D universe.
             But, to keep it from fading into nothingness, you must maintain entropy in the system.
-            Keep adding energy into your universe by stirring up the nothingness of the vacuum.
+            Keep adding energy into your 3D universe by stirring up the nothingness of the vacuum.
 
-            There's no Physics here. Only Virsiks. Play along and try to work out the new rules of the game.
+            There's no Physics here. Only 3D Virsiks. Play along and try to work out the new rules of the game.
+            Use mouse controls to navigate the 3D space and create wind forces to move the spherical varticles and oddles.
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS (Optional) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="bubble_obs.js"></script>
+    <script src="bubble3d.js"></script>
 </body>
 </html>
